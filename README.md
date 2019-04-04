@@ -23,3 +23,16 @@ cf create-shared-domain tcp.example.com --router-group default-tcp
 # Other notes
 - TODO: this example needs to be updated to use volume mounts, so that data is not discarded on app restart.
 - mongo seemed to have trouble listening on all TCP ports, so this example uses `socat` to relay traffic to mongo on localhost.  Theoretically that should be unnecessary and we should be able to use the `--bind_ip_all` option.
+
+## some sample mongo cli interaction
+Here's what mongo looks like by default when you first connect to it and add a document to a collection:
+```
+> db
+test
+> db.mystuff.insert({"id":0})
+WriteResult({ "nInserted" : 1 })
+> db.mystuff.find()
+{ "_id" : ObjectId("5ca6885ec3e0611dcbdd7f76"), "id" : 0 }
+> exit
+bye
+```
