@@ -1,0 +1,9 @@
+---
+applications:
+- name: mongodb
+  command: ./start.sh
+  routes:
+  - route: tcp.example.com:27017
+  buildpacks:
+  - binary_buildpack
+  stack: cflinuxfs3
