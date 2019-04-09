@@ -21,8 +21,8 @@ cf create-shared-domain tcp.example.com --router-group default-tcp
 ```
 
 # Other notes
-- TODO: this example needs to be updated to use volume mounts, so that data is not discarded on app restart.
-- mongo seemed to have trouble listening on all TCP ports, so this example uses `socat` to relay traffic to mongo on localhost.  Theoretically that should be unnecessary and we should be able to use the `--bind_ip_all` option.
+- This example app will detect a volume service if one is bound, and place the logs and data for mongo in that directory.  If no volume service is provided, it will use the ephemeral storage for the application, with the obvious downside that your data will be discarded when the application stops.
+- Mongo seemed to have trouble listening on all TCP ports, so this example uses `socat` to relay traffic to mongo on localhost.  Theoretically that should be unnecessary and we should be able to use the `--bind_ip_all` option.
 
 ## some sample mongo cli interaction
 Here's what mongo looks like by default when you first connect to it and add a document to a collection:
