@@ -13,5 +13,11 @@ if [ -z "$PORT" ]; then
   PORT=8080
 fi
 
+export MONGO_PORT=$PORT
+APPLICATION_ID=`echo $VCAP_APPLICATION | jq -r '.application_id'`
+export MONGO_SIDECAR_POD_LABELS="guid=$APPLICATION_ID"
+export KUBE_NAMESPACE=cf-workloads
+
 ./bin/socat TCP4-LISTEN:$PORT,fork TCP4:localhost:27017 &
-./bin/mongod --dbpath $DATA_DIR/mongo/data/db --logpath $DATA_DIR/mongo/log/mongodb.log
+npm start &
+./bin/mongod --dbpath $DATA_DIR/mongo/data/db --logpath $DATA_DIR/mongo/log/mongodb.log --replSet eiriniy
