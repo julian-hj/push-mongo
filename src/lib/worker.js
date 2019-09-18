@@ -1,5 +1,4 @@
 var mongo = require('./mongo');
-var k8s = require('./k8s');
 var config = require('./config');
 var ip = require('ip');
 var async = require('async');
@@ -33,57 +32,57 @@ var workloop = function workloop() {
     throw new Error('Must initialize with the host machine\'s addr');
   }
 
-  //Do in series so if k8s.getMongoPods fails, it doesn't open a db connection
-  async.series([
-    k8s.getMongoPods,
-    mongo.getDb
-  ], function(err, results) {
-    var db = null;
-    if (Array.isArray(results) && results.length === 2) {
-      db = results[1];
-    }
-
+  dns.resolve4(config.mongoDnsName, function(err, addresses) {
     if (err) {
-      return finish(err, db);
+      return finish(err);
+    }
+    if (!addresses.length) {
+      return finish('No IPs found by DNS lookup. Is service discovery enabled?');
     }
 
-    var pods = results[0];
+    // make a fake pods array to make our IP addresses look like k8s pods so that we
+    // don't have to rewrite a bunch of code.
+    var pods = [];
+    addresses.forEach(function(ip){
+      var pod = {
+        status: {
+          podIP: ip,
+          phase: "Running"
+        }
+      };
 
-    //Lets remove any pods that aren't running or haven't been assigned an IP address yet
-    for (var i = pods.length - 1; i >= 0; i--) {
-      var pod = pods[i];
-      if (pod.status.phase !== 'Running' || !pod.status.podIP) {
-        pods.splice(i, 1);
-      }
-    }
+      pods.push(pod);
+    });
 
-    if (!pods.length) {
-      return finish('No pods are currently running, probably just give them some time.');
-    }
-
-    //Lets try and get the rs status for this mongo instance
-    //If it works with no errors, they are in the rs
-    //If we get a specific error, it means they aren't in the rs
-    mongo.replSetGetStatus(db, function(err, status) {
+    mongo.getDb("localhost", function(err, db){
       if (err) {
-        if (err.code && err.code == 94) {
-          notInReplicaSet(db, pods, function(err) {
-            finish(err, db);
-          });
-        }
-        else if (err.code && err.code == 93) {
-          invalidReplicaSet(db, pods, status, function(err) {
-            finish(err, db);
-          });
-        }
-        else {
-          finish(err, db);
-        }
-        return;
+        return finish(err, db);
       }
 
-      inReplicaSet(db, pods, status, function(err) {
-        finish(err, db);
+      //Lets try and get the rs status for this mongo instance
+      //If it works with no errors, they are in the rs
+      //If we get a specific error, it means they aren't in the rs
+      mongo.replSetGetStatus(db, function(err, status) {
+        if (err) {
+          if (err.code && err.code == 94) {
+            notInReplicaSet(db, pods, function(err) {
+              finish(err, db);
+            });
+          }
+          else if (err.code && err.code == 93) {
+            invalidReplicaSet(db, pods, status, function(err) {
+              finish(err, db);
+            });
+          }
+          else {
+            finish(err, db);
+          }
+          return;
+        }
+
+        inReplicaSet(db, pods, status, function(err) {
+          finish(err, db);
+        });
       });
     });
   });

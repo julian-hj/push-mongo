@@ -3,7 +3,8 @@ applications:
 - name: mongodb
   command: ./start.sh
   routes:
-  - route: tcp.hippothoe.mestor.cf-app.com:27017
+  - route: tcp.example.com:27017
+  - route: mongo.apps.internal
   buildpacks:
   - nodejs_buildpack
   stack: cflinuxfs3

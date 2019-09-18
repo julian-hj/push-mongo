@@ -14,9 +14,7 @@ if [ -z "$PORT" ]; then
 fi
 
 export MONGO_PORT=$PORT
-APPLICATION_ID=`echo $VCAP_APPLICATION | jq -r '.application_id'`
-export MONGO_SIDECAR_POD_LABELS="guid=$APPLICATION_ID"
-export KUBE_NAMESPACE=cf-workloads
+export MONGO_DNS_NAME=mongo.apps.internal
 
 ./bin/socat TCP4-LISTEN:$PORT,fork TCP4:localhost:27017 &
 npm start &
